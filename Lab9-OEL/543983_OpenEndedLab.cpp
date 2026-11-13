@@ -2,22 +2,10 @@
 // registration no: 543983
 // section: D
 
-// design:
-// students are stored in a bst (binary search tree) using roll number as the key.
-// a bst keeps rolls in order so display gives a sorted list for free and
-// search/insert are fast when the tree is fairly balanced. it also makes
-// the duplicate check easy because we search before inserting.
-// help requests are kept in a queue (linked list with front and rear).
-// the desk should serve people in the order they asked (first come first
-// served) which is exactly what a queue does.
-
 // time complexity (worst case):
-// add student    -> O(n), happens when the tree is a straight line (sorted input)
-// search student -> O(n), same reason. average case is O(log n)
-// enqueue/dequeue -> O(1)
-
-// alternative data structure: a hash table would give O(1) average search
-// and insert, but it cannot display students in sorted order easily.
+// add student is O(n), happens when the tree is a straight line (sorted input)
+// search student is O(n) and average case is O(log n)
+// enqueue/dequeue is O(1)
 
 #include <iostream>
 #include <string>
@@ -43,13 +31,14 @@ Request* rear = NULL;
 
 // look for a roll number, returns the node or NULL
 Student* searchStudent(int roll) {
-    Student* cur = root;
+    Student* cur = root;        // use a current pointer from root
     while (cur != NULL) {
-        if (roll == cur->roll)
+        if (roll == cur->roll)      // roll no found
             return cur;
-        else if (roll < cur->roll)
+        // split left or right
+        else if (roll < cur->roll)      // move left
             cur = cur->left;
-        else
+        else        // move right
             cur = cur->right;
     }
     return NULL;
@@ -57,59 +46,66 @@ Student* searchStudent(int roll) {
 
 // adds a student, returns false if roll already exists
 bool addStudent(int roll, string name) {
-    if (searchStudent(roll) != NULL)
+    if (searchStudent(roll) != NULL)        // check if student already exists
         return false;
 
+    // create a new node 
     Student* node = new Student;
     node->roll = roll;
     node->name = name;
     node->left = NULL;
     node->right = NULL;
 
+    // in case of being first node
     if (root == NULL) {
         root = node;
         return true;
     }
 
+    // use current pointer to find the right place to insert
     Student* cur = root;
     while (true) {
         if (roll < cur->roll) {
-            if (cur->left == NULL) {
-                cur->left = node;
+            if (cur->left == NULL) {        // check if empty
+                cur->left = node;           // insert here 
                 break;
             }
-            cur = cur->left;
+            cur = cur->left;        // mmove left
         } else {
-            if (cur->right == NULL) {
-                cur->right = node;
+            if (cur->right == NULL) {       // check if empty
+                cur->right = node;          // insert here 
                 break;
             }
-            cur = cur->right;
+            cur = cur->right;       // move right
         }
     }
     return true;
 }
 
-// prints in order (left, node, right) so rolls come out sorted
+// prints in order (left, node, right) so rolls come out in ascending order
 void displayTree(Student* node) {
-    if (node == NULL)
+    if (node == NULL)       // check for empty tree
         return;
     displayTree(node->left);
-    cout << "  " << node->roll << "  " << node->name << endl;
+    cout << node->roll << "  " << node->name << endl;
     displayTree(node->right);
 }
 
-// deletes the whole tree, children first
-void freeTree(Student* node) {
+// deletes the whole tree deleting the children first (post order)
+void deleteTree(Student* node) {
     if (node == NULL)
         return;
-    freeTree(node->left);
-    freeTree(node->right);
+    deleteTree(node->left);
+    deleteTree(node->right);
     delete node;
 }
 
+// help requests are kept in a queue (linked list with front and rear).
+// the desk should serve people in the order they asked (first come first served)
+
 // put a roll at the back of the queue
 void enqueue(int roll) {
+    // create a new node
     Request* node = new Request;
     node->roll = roll;
     node->next = NULL;
@@ -128,23 +124,24 @@ bool dequeue(int &roll) {
     if (front == NULL)
         return false;
 
-    Request* temp = front;
+    Request* temp = front;      // temporary pointer to delete the front node
     roll = temp->roll;
-    front = front->next;
+    front = front->next;        // move front forward
     if (front == NULL)
-        rear = NULL;
-    delete temp;
+        rear = NULL;    
+    delete temp;        // delete the node
     return true;
 }
 
 // shows who is waiting without removing anyone
 void showQueue() {
-    if (front == NULL) {
+    if (front == NULL) {        // incase of empty queue
         cout << "no requests waiting" << endl;
         return;
     }
     cout << "waiting (first to last): ";
     Request* cur = front;
+    // traverse the queue and output all rolls
     while (cur != NULL) {
         cout << cur->roll << " ";
         cur = cur->next;
@@ -153,7 +150,7 @@ void showQueue() {
 }
 
 void addRequest() {
-    int roll;
+    int roll;   
     cout << "enter roll number: ";
     cin >> roll;
 
@@ -171,7 +168,7 @@ void serveRequest() {
         cout << "no requests to serve" << endl;
         return;
     }
-    Student* s = searchStudent(roll);
+    Student* s = searchStudent(roll);       // point to the roll number in the tree
     cout << "now serving: " << roll << " " << s->name << endl;
 }
 
@@ -213,10 +210,12 @@ int main() {
         if (choice == 1) {
             int roll;
             string name;
+
             cout << "enter roll number: ";
             cin >> roll;
             cout << "enter name: ";
             cin >> name;
+
             if (addStudent(roll, name))
                 cout << "student added" << endl;
             else
@@ -226,6 +225,7 @@ int main() {
             int roll;
             cout << "enter roll number: ";
             cin >> roll;
+
             Student* s = searchStudent(roll);
             if (s != NULL)
                 cout << "found: " << s->roll << " " << s->name << endl;
@@ -246,14 +246,13 @@ int main() {
         else if (choice != 5) {
             cout << "wrong option, try again" << endl;
         }
-    } while (choice != 5);
+    } while (choice != 5);      // exit
 
     // clean up before leaving
-    freeTree(root);
+    deleteTree(root);
     int temp;
-    while (dequeue(temp)) {
+    while (dequeue(temp)) {     // dequeue all requests
     }
 
-    cout << "Goodbye" << endl;
     return 0;
 }
